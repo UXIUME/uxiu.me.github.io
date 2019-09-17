@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<body>
+<head>
+  <link rel="Bookmark" type="image/x-icon" href="https://raw.githubusercontent.com/UXIUME/uxiume.github.io/master/Assets/uxiume.ico" />
+  <link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/UXIUME/uxiume.github.io/master/Assets/uxiume.ico" />
+  <link rel="shortcut icon" type="image/x-icon" href="https://raw.githubusercontent.com/UXIUME/uxiume.github.io/master/Assets/uxiume.ico" />
+</head>
+<h1>Vultr搭建ShadowSocks Python版并开启多用户与BBR</h1>
+<p>
+10月 12, 2017 发布在 internet
+系统：CentOS 7
+1. 安装SS
+
+参考 <a href="https://pypi.org/project/shadowsocks/">官网</a>
+yum install python-setuptools && easy_install pip
+pip install shadowsocks
+
+2. 开启多用户
+
+vi /etc/shadowsocks.json # 内容如下
+
+{
+    "server":"0.0.0.0",
+    "local_address":"127.0.0.1",
+    "local_port":1080,
+    "port_password":{
+         "23331":"xxxx",  //开放端口和密码
+         "23333":"yyyy",  //开放端口和密码
+    },
+    "timeout":300,
+    "method":"aes-256-cfb",
+    "fast_open": false
+}
+
+
+3. 开机自启动
+
+vi /etc/systemd/system/shadowsocks.service # 内容如下
+[Unit]
+Description=Shadowsocks
+[Service]
+TimeoutStartSec=0
+ExecStart=/usr/bin/ssserver -c /etc/shadowsocks.json
+[Install]
+WantedBy=multi-user.target
+
+systemctl enable shadowsocks
+systemctl start shadowsocks
+
+
+4. 安装BBR
+
+wget --no-check-certificate https://github.com/teddysun/across/raw/master/bbr.sh
+chmod +x bbr.sh
+./bbr.sh
+安装完提示重启，然后用以下命令查询是否返回bbr
+lsmod | grep bbr
+5. 设置防火墙
+
+Vultr控制台防火墙有时不好使，还是原生配置吧
+
+firewall-cmd --zone=public --add-port=80/tcp --permanent # 开80端口
+firewall-cmd --zone=public --add-port=23331/tcp --permanent # 开23331 TCP端口
+firewall-cmd --zone=public --add-port=23331/udp --permanent # 开23331 UDP端口
+firewall-cmd --zone=public --add-port=23333/tcp --permanent # 开23333 TCP端口
+firewall-cmd --zone=public --add-port=23333/udp --permanent # 开23333 UDP端口
+firewall-cmd --reload  # 重载配置
+iptables -L -n  # 查询防火墙规则
+完事……
+</p>
+<a href="/new.html">跳转到博客页面</a>
+</body>
+</html>
